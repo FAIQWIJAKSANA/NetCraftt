@@ -1,0 +1,109 @@
+// Prisma Schema for NetCraft (SQLite for Zero-Config Local Dev)
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Group {
+  id          String         @id @default(uuid())
+  name        String         // Contoh: "Kelompok 1"
+  className   String         // Contoh: "X TJKT 1"
+  accessCode  String         @unique // Kode masuk ruang kelompok
+  createdAt   DateTime       @default(now())
+  users       User[]
+  pblMatrices PblMatrix[]
+  assessment  Assessment?
+}
+
+model User {
+  id         String     @id @default(uuid())
+  groupId    String?
+  name       String
+  role       String     @default("STUDENT") // "STUDENT" atau "TEACHER"
+  xpPoints   Int        @default(0)
+  rankTitle  String     @default("Siswa Magang")
+  createdAt  DateTime   @default(now())
+  group      Group?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  progress   UserProgress[]
+}
+
+model HardwareCard {
+  id           String   @id @default(uuid())
+  slug         String   @unique // router, switch, access-point, modem, nic, utp-cable
+  name         String
+  category     String
+  analogy      String
+  osiLayer     String
+  keySpecs     String   // Deskripsi spek ringkas
+  dosAndDonts  String   // Tips lapangan / pantangan
+  imageUrl     String
+  hotspotsJson String   // JSON array dari titik hotspot koordinat {x, y, title, description}
+  audioTerm    String   // Istilah pelafalan
+  createdAt    DateTime @default(now())
+}
+
+model PuzzleLevel {
+  id                   String   @id @default(uuid())
+  levelNumber          Int      @unique
+  title                String
+  cognitiveLevel       String   // C3, C4, C5
+  scenarioStory        String
+  hintText             String
+  initialStateJson     String   // JSON state awal komponen visual
+  solutionTargetJson   String   // JSON kondisi keberhasilan
+  explanationDeepLearn String   // Ulasan teknis setelah berhasil
+  createdAt            DateTime @default(now())
+}
+
+model QuizSwipe {
+  id          String   @id @default(uuid())
+  statement   String
+  isCorrect   Boolean  // True = Geser Kanan, False = Geser Kiri
+  explanation String
+  category    String   // Hardware terkait
+  createdAt   DateTime @default(now())
+}
+
+model PblMatrix {
+  id            String   @id @default(uuid())
+  groupId       String
+  hardwareName  String
+  functionInCase String // Fungsi di Ruko 2 lantai
+  portSpecs     String   // Jumlah port / spek
+  justification String   // Alasan pemilihan rasional
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  group         Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model Assessment {
+  id                  String   @id @default(uuid())
+  groupId             String   @unique
+  scoreGotongRoyong   Int      // Skala 1 - 4
+  scoreBernalarKritis Int      // Skala 1 - 4
+  scoreHardwareDetail Int      // Skala 1 - 4
+  scoreTeknis         Int      // Skala 1 - 4
+  finalScore          Float    // Terhitung otomatis rumus RPP: (Total Skor / 8) * 100
+  teacherNotes        String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  group               Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model UserProgress {
+  id            String   @id @default(uuid())
+  userId        String
+  type          String   // "PUZZLE" atau "SWIPE_QUIZ" atau "CARD_VIEW"
+  referenceId   String   // ID level puzzle atau ID kuis
+  starsEarned   Int      @default(0) // 1 - 3 bintang
+  hintsUsed     Int      @default(0)
+  completedAt   DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, referenceId])
+}

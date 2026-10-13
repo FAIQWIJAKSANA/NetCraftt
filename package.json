@@ -1,0 +1,12 @@
+{
+  "name": "netcraft-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NetCraft - Platform Media Pembelajaran Jaringan Komputer SMK",
+  "scripts": {
+    "build": "cd mobile && npx expo export --platform web",
+    "export": "cd mobile && npx expo export --platform web",
+    "start": "cd mobile && npx expo start --web",
+    "start:backend": "cd backend && node src/server.js"
+  }
+}

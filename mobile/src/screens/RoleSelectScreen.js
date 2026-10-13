@@ -9,6 +9,8 @@ import {
   SafeAreaView,
   Alert,
   Modal,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
@@ -17,6 +19,8 @@ import { useApp } from '../context/AppContext';
 
 export default function RoleSelectScreen({ navigation }) {
   const { loginStudent, loginTeacher } = useApp();
+  const { width } = useWindowDimensions();
+  const isWide = Platform.OS === 'web' && width > 700;
   const [roleTab, setRoleTab] = useState('STUDENT'); // 'STUDENT' | 'TEACHER'
 
   // Form State
@@ -97,7 +101,8 @@ export default function RoleSelectScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, isWide && styles.scrollWide]}>
+        <View style={isWide ? styles.contentWide : null}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.badge}>AUTENTIKASI KELAS X</Text>
@@ -243,6 +248,7 @@ export default function RoleSelectScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         )}
+        </View>
       </ScrollView>
 
       {/* Modal Tambah Kelompok Manual */}
@@ -301,6 +307,13 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: 24,
+  },
+  scrollWide: {
+    alignItems: 'center',
+  },
+  contentWide: {
+    width: '100%',
+    maxWidth: 560,
   },
   header: {
     marginTop: 20,

@@ -1,7 +1,34 @@
 import { Platform } from 'react-native';
-import { mockHardwareCards, mockPuzzleLevels, mockQuizSwipes } from './mockData';
+import { mockHardwareCards, mockPuzzleLevels, mockQuizSwipes, mockTeacherSummary } from './mockData';
 
-const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
+let cachedTeacherSummary = null;
+
+// ─── Auto-detect API URL ──────────────────────────────────────────────────────
+// Di web (Netlify/Vercel), gunakan URL backend yang dideploy (env var atau relative)
+// Di Android emulator, gunakan 10.0.2.2 (alias untuk localhost host machine)
+// Di iOS simulator / desktop, gunakan localhost
+const getBaseUrl = () => {
+  if (Platform.OS === 'web') {
+    // Jika ada env variable dari proses build (Netlify/Vercel)
+    if (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL) {
+      return process.env.REACT_APP_API_URL;
+    }
+    // Jika sudah dideploy di production (bukan localhost)
+    if (typeof window !== 'undefined' && window.location) {
+      const { hostname } = window.location;
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        // Gunakan URL backend Railway/Render yang sudah dideploy
+        return 'https://netcraft-api.up.railway.app/api';
+      }
+    }
+    // Development web local
+    return 'http://localhost:5000/api';
+  }
+  if (Platform.OS === 'android') return 'http://10.0.2.2:5000/api';
+  return 'http://localhost:5000/api';
+};
+
+const BASE_URL = getBaseUrl();
 
 export const API = {
   // Auth
@@ -202,14 +229,52 @@ export const API = {
   async getTeacherSummary() {
     try {
       const res = await fetch(`${BASE_URL}/assessments/summary`);
-      const json = await res.json();
-      return json.data || [];
-    } catch {
-      return [];
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data && json.data.length > 0) {
+          cachedTeacherSummary = json.data;
+          return json.data;
+        }
+      }
+    } catch (e) {
+      // offline / backend not running
     }
+    if (!cachedTeacherSummary) {
+      cachedTeacherSummary = JSON.parse(JSON.stringify(mockTeacherSummary));
+    }
+    return cachedTeacherSummary;
   },
 
   async gradeGroup(data) {
+    const { groupId, scoreGotongRoyong, scoreBernalarKritis, scoreHardwareDetail, scoreTeknis, teacherNotes } = data;
+    const sikapScore = ((Number(scoreGotongRoyong) + Number(scoreBernalarKritis)) / 8) * 100;
+    const unjukScore = ((Number(scoreHardwareDetail) + Number(scoreTeknis)) / 8) * 100;
+    const finalScore = Math.round(((sikapScore + unjukScore) / 2) * 10) / 10;
+
+    // Update local cache agar respon instan
+    if (cachedTeacherSummary) {
+      cachedTeacherSummary = cachedTeacherSummary.map((grp) => {
+        if (grp.groupId === groupId) {
+          return {
+            ...grp,
+            isGraded: true,
+            finalScore,
+            assessmentDetail: {
+              ...(grp.assessmentDetail || {}),
+              groupId,
+              scoreGotongRoyong,
+              scoreBernalarKritis,
+              scoreHardwareDetail,
+              scoreTeknis,
+              finalScore,
+              teacherNotes,
+            },
+          };
+        }
+        return grp;
+      });
+    }
+
     try {
       const res = await fetch(`${BASE_URL}/assessments/grade`, {
         method: 'POST',
@@ -218,7 +283,8 @@ export const API = {
       });
       return await res.json();
     } catch {
-      return { success: true };
+      return { success: true, finalScore };
     }
   },
 };
+

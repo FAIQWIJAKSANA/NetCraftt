@@ -9,9 +9,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middlewares
-app.use(cors());
+// CORS: izinkan semua origin (termasuk Netlify, localhost, dan React Native web)
+app.use(cors({
+  origin: (origin, callback) => {
+    // Izinkan semua origin (mobile apps tidak kirim origin header)
+    callback(null, true);
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(morgan('dev'));
+
 
 // Static files for hardware images
 app.use('/static', express.static(path.join(__dirname, '../public')));

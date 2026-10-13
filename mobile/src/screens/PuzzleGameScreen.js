@@ -523,8 +523,7 @@ export default function PuzzleGameScreen({ route, navigation }) {
               </View>
             )}
 
-            {/* BENDA FISIK YANG BISA DISERET (DRAGGABLE OBJECT) (Revisi 2, 3, 7) */}
-            {/* REVISI: Menggunakan Icon berukuran raksasa tanpa teks untuk merepresentasikan benda fisik sungguhan */}
+            {/* BENDA FISIK YANG BISA DISERET (DRAGGABLE OBJECT) (Revisi Ukuran Proporsional & Rapi) */}
             <View style={styles.dragSpawnContainer}>
               {/* Level 1: Kepala Kabel UTP */}
               {levelNum === 1 && !lvl1Done && (
@@ -536,7 +535,7 @@ export default function PuzzleGameScreen({ route, navigation }) {
                     isHoldingItem && styles.draggingGlow,
                   ]}
                 >
-                  <Ionicons name="git-commit" size={70} color="#F59E0B" />
+                  <Ionicons name="git-commit" size={26} color="#F59E0B" />
                 </Animated.View>
               )}
 
@@ -550,7 +549,7 @@ export default function PuzzleGameScreen({ route, navigation }) {
                     isHoldingItem && styles.draggingGlow,
                   ]}
                 >
-                  <Ionicons name="flash" size={70} color="#10B981" />
+                  <Ionicons name="flash" size={26} color="#10B981" />
                 </Animated.View>
               )}
 
@@ -564,7 +563,7 @@ export default function PuzzleGameScreen({ route, navigation }) {
                     isHoldingItem && styles.draggingGlow,
                   ]}
                 >
-                  <Ionicons name="wifi" size={70} color="#00F0FF" />
+                  <Ionicons name="wifi" size={26} color="#00F0FF" />
                 </Animated.View>
               )}
 
@@ -578,7 +577,7 @@ export default function PuzzleGameScreen({ route, navigation }) {
                     isHoldingItem && styles.draggingGlow,
                   ]}
                 >
-                  <Ionicons name={!lvl4NicInserted ? "hardware-chip" : "git-commit"} size={70} color="#10B981" />
+                  <Ionicons name={!lvl4NicInserted ? "hardware-chip" : "git-commit"} size={26} color="#10B981" />
                 </Animated.View>
               )}
 
@@ -592,7 +591,7 @@ export default function PuzzleGameScreen({ route, navigation }) {
                     isHoldingItem && styles.draggingGlow,
                   ]}
                 >
-                  <Ionicons name="cut" size={70} color="#EF4444" />
+                  <Ionicons name="cut" size={26} color="#EF4444" />
                 </Animated.View>
               )}
 
@@ -606,19 +605,20 @@ export default function PuzzleGameScreen({ route, navigation }) {
                     isHoldingItem && styles.draggingGlow,
                   ]}
                 >
-                  <Ionicons name="radio" size={70} color="#10B981" />
+                  <Ionicons name="radio" size={26} color="#10B981" />
                 </Animated.View>
               )}
             </View>
 
             {/* Hint Panduan Gerak di Bawah Kanvas */}
             <View style={styles.canvasBottomTip}>
-              <Ionicons name="hand-left-outline" size={13} color={COLORS.primary} />
+              <Ionicons name="hand-left-outline" size={12} color={COLORS.primary} />
               <Text style={styles.canvasBottomTipText}>
-                Sentuh dan seret benda besar di atas menuju target bercahaya di dalam gambar!
+                Sentuh dan seret objek lingkaran ke arah target berkedip di gambar!
               </Text>
             </View>
           </View>
+
 
           {/* AKSI INTERAKSI TAMBAHAN (MISAL SAKLAR LEVEL 2) */}
           {levelNum === 2 && (
@@ -913,31 +913,34 @@ const styles = StyleSheet.create({
   },
   dragSpawnContainer: {
     position: 'absolute',
-    bottom: 34,
-    left: 16,
-    right: 16,
+    bottom: 22,
+    left: 0,
+    right: 0,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 20,
   },
   draggableItemPhysical: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(11, 15, 25, 0.95)',
-    padding: 16,
-    borderRadius: 50,
     borderWidth: 2,
     borderColor: COLORS.primary,
     shadowColor: '#00F0FF',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.8,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 8,
   },
   draggingGlow: {
     borderColor: COLORS.secondary,
     backgroundColor: 'rgba(16, 185, 129, 0.95)',
+    transform: [{ scale: 1.15 }],
   },
+
   draggablePieceText: {
     fontSize: 12,
     fontWeight: '900',

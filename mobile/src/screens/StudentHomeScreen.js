@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
@@ -13,10 +15,14 @@ import { useApp } from '../context/AppContext';
 
 export default function StudentHomeScreen({ navigation }) {
   const { currentUser, currentGroup, xpPoints, rankTitle, logout } = useApp();
+  const { width } = useWindowDimensions();
+  const isWide = Platform.OS === 'web' && width > 700;
+  const menuCardWidth = isWide ? '22%' : '48%';
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, isWide && styles.scrollWide]}>
+        <View style={isWide ? styles.contentWide : null}>
         {/* Top User Bar */}
         <View style={styles.userBar}>
           <View>
@@ -83,7 +89,7 @@ export default function StudentHomeScreen({ navigation }) {
         <View style={styles.grid}>
           {/* 1. Hardware Deck */}
           <TouchableOpacity
-            style={styles.menuCard}
+            style={[styles.menuCard, { width: menuCardWidth }]}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('HardwareDeck')}
           >
@@ -96,7 +102,7 @@ export default function StudentHomeScreen({ navigation }) {
 
           {/* 2. Tinder Quiz */}
           <TouchableOpacity
-            style={styles.menuCard}
+            style={[styles.menuCard, { width: menuCardWidth }]}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('TinderQuiz')}
           >
@@ -109,7 +115,7 @@ export default function StudentHomeScreen({ navigation }) {
 
           {/* 3. NetFix Lab */}
           <TouchableOpacity
-            style={styles.menuCard}
+            style={[styles.menuCard, { width: menuCardWidth }]}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('NetFixLab')}
           >
@@ -122,7 +128,7 @@ export default function StudentHomeScreen({ navigation }) {
 
           {/* 4. Matriks PBL */}
           <TouchableOpacity
-            style={styles.menuCard}
+            style={[styles.menuCard, { width: menuCardWidth }]}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('MatriksPBL')}
           >
@@ -142,6 +148,7 @@ export default function StudentHomeScreen({ navigation }) {
             Selalu tancapkan kabel dari modem ISP ke port WAN (warna biru), bukan LAN!
           </Text>
         </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -155,6 +162,13 @@ const styles = StyleSheet.create({
   scroll: {
     padding: 20,
     paddingBottom: 40,
+  },
+  scrollWide: {
+    alignItems: 'center',
+  },
+  contentWide: {
+    width: '100%',
+    maxWidth: 900,
   },
   userBar: {
     flexDirection: 'row',

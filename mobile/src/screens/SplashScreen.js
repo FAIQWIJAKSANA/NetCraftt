@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, useWindowDimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 
 export default function SplashScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isWide = Platform.OS === 'web' && width > 700;
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <View style={[styles.content, isWide && styles.contentWide]}>
         {/* Animated Icon Container */}
         <View style={styles.iconCircle}>
           <Ionicons name="hardware-chip-outline" size={72} color={COLORS.primary} />
@@ -46,6 +48,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 28,
+  },
+  contentWide: {
+    maxWidth: 520,
+    alignSelf: 'center',
+    width: '100%',
   },
   iconCircle: {
     width: 130,

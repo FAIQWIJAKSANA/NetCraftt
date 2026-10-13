@@ -9,6 +9,8 @@ import {
   Modal,
   TextInput,
   Alert,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
@@ -17,8 +19,11 @@ import { useApp } from '../context/AppContext';
 
 export default function TeacherDashboardScreen({ navigation }) {
   const { currentUser, logout } = useApp();
+  const { width } = useWindowDimensions();
+  const isWide = width > 700; // Layout 2 kolom untuk tablet/web
   const [groupsSummary, setGroupsSummary] = useState([]);
   const [selectedGroupToGrade, setSelectedGroupToGrade] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Rubric Scores (1 - 4)
   const [gotongRoyong, setGotongRoyong] = useState(4);
@@ -32,9 +37,17 @@ export default function TeacherDashboardScreen({ navigation }) {
   }, []);
 
   const loadSummary = async () => {
-    const list = await API.getTeacherSummary();
-    setGroupsSummary(list);
+    setLoading(true);
+    try {
+      const list = await API.getTeacherSummary();
+      setGroupsSummary(list && list.length > 0 ? list : []);
+    } catch (e) {
+      console.warn('Gagal load summary:', e);
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   const openGradingModal = (grp) => {
     setSelectedGroupToGrade(grp);
@@ -77,57 +90,81 @@ export default function TeacherDashboardScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       {/* Top Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.badge}>PORTAL PENGAMPU INFORMATIKA</Text>
-          <Text style={styles.title}>Dashboard Guru</Text>
-          <Text style={styles.teacherName}>Pengajar: {currentUser?.name || 'Guru Informatika'}</Text>
-        </View>
+      <View style={styles.headerWrapper}>
+        <View style={[styles.header, isWide && styles.headerWide]}>
+          <View>
+            <Text style={styles.badge}>PORTAL PENGAMPU INFORMATIKA</Text>
+            <Text style={styles.title}>Dashboard Guru</Text>
+            <Text style={styles.teacherName}>Pengajar: {currentUser?.name || 'Guru Informatika'}</Text>
+          </View>
 
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          onPress={() => {
-            logout();
-            navigation.replace('RoleSelect');
-          }}
-        >
-          <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Class Insight Card */}
-        <View style={styles.statsCard}>
-          <Text style={styles.statsTitle}>Statistik Kelas X - Problem-Based Learning</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statNum}>{groupsSummary.length}</Text>
-              <Text style={styles.statLabel}>Kelompok PBL</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statNum}>
-                {groupsSummary.filter((g) => g.isGraded).length} / {groupsSummary.length}
-              </Text>
-              <Text style={styles.statLabel}>Tuntas Dinilai</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={[styles.statNum, { color: COLORS.secondary }]}>100%</Text>
-              <Text style={styles.statLabel}>Keaktifan</Text>
-            </View>
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <TouchableOpacity style={styles.refreshBtn} onPress={loadSummary} activeOpacity={0.7}>
+              <Ionicons name="refresh-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutBtn}
+              onPress={() => {
+                logout();
+                navigation.replace('RoleSelect');
+              }}
+            >
+              <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
+            </TouchableOpacity>
           </View>
         </View>
+      </View>
 
-        <Text style={styles.sectionTitle}>Daftar Kelompok & Lembar Penilaian</Text>
+      <ScrollView contentContainerStyle={[styles.scroll, isWide && styles.scrollWide]}>
+        <View style={isWide ? styles.contentWide : null}>
+          {/* Class Insight Card */}
+          <View style={styles.statsCard}>
+            <Text style={styles.statsTitle}>Statistik Kelas X - Problem-Based Learning</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNum}>{groupsSummary.length}</Text>
+                <Text style={styles.statLabel}>Kelompok PBL</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statNum}>
+                  {groupsSummary.filter((g) => g.isGraded).length} / {groupsSummary.length}
+                </Text>
+                <Text style={styles.statLabel}>Tuntas Dinilai</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={[styles.statNum, { color: COLORS.secondary }]}>100%</Text>
+                <Text style={styles.statLabel}>Keaktifan</Text>
+              </View>
+            </View>
+          </View>
 
-        {/* Groups List */}
-        <View style={{ gap: 14 }}>
-          {groupsSummary.map((grp) => (
-            <View key={grp.groupId} style={styles.groupCard}>
-              <View style={styles.groupHeader}>
-                <View>
-                  <Text style={styles.groupName}>{grp.groupName}</Text>
-                  <Text style={styles.groupClass}>{grp.className} • {grp.totalMembers} Anggota</Text>
-                </View>
+          <Text style={styles.sectionTitle}>Daftar Kelompok & Lembar Penilaian</Text>
+
+          {/* Groups List */}
+          {loading ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="sync" size={32} color={COLORS.primary} style={{ marginBottom: 8 }} />
+              <Text style={styles.loadingText}>Memuat rekapitulasi data kelompok...</Text>
+            </View>
+          ) : groupsSummary.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="folder-open-outline" size={44} color={COLORS.textMuted} />
+              <Text style={styles.emptyTitle}>Belum Ada Data Kelompok</Text>
+              <Text style={styles.emptySubtitle}>Tekan tombol di bawah untuk memuat data kelas X TJKT.</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={loadSummary}>
+                <Text style={styles.retryBtnText}>Muat Ulang Data</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={{ gap: 14 }}>
+              {groupsSummary.map((grp) => (
+                <View key={grp.groupId} style={styles.groupCard}>
+                  <View style={styles.groupHeader}>
+                    <View>
+                      <Text style={styles.groupName}>{grp.groupName}</Text>
+                      <Text style={styles.groupClass}>{grp.className} • {grp.totalMembers} Anggota</Text>
+                    </View>
+
 
                 {grp.finalScore ? (
                   <View style={styles.scoreBadge}>
@@ -174,6 +211,8 @@ export default function TeacherDashboardScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           ))}
+        </View>
+        )}
         </View>
       </ScrollView>
 
@@ -282,6 +321,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  headerWrapper: {
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.surfaceBorder,
+    alignItems: 'center',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -289,9 +334,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 14,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.surfaceBorder,
+    width: '100%',
+  },
+  headerWide: {
+    maxWidth: 900,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  scrollWide: {
+    alignItems: 'center',
+  },
+  contentWide: {
+    width: '100%',
+    maxWidth: 900,
   },
   badge: {
     fontSize: 10,
@@ -309,6 +364,13 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 2,
   },
+  refreshBtn: {
+    padding: 10,
+    backgroundColor: 'rgba(0, 240, 255, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 240, 255, 0.3)',
+  },
   logoutBtn: {
     padding: 10,
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -316,6 +378,47 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.3)',
   },
+  emptyContainer: {
+    backgroundColor: COLORS.surface,
+    padding: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.surfaceBorder,
+    marginTop: 10,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: 12,
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  retryBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  retryBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#000000',
+  },
+
   scroll: {
     padding: 18,
     paddingBottom: 40,
